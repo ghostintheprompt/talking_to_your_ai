@@ -1,0 +1,7 @@
+{
+  "name": "talking_to_your_ai",
+  "version": "0.1.0",
+  "description": "An AI red-team lab: indirect prompt injection in a content summarizer. The vulnerable reader obeys instructions buried in the content it reads; the fixed reader treats content as data and quarantines the directive. A benign canary and a data-exfiltration order take the same path.",
+  "scripts": { "test": "node test.js" },
+  "license": "MIT"
+}
