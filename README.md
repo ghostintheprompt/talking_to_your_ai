@@ -1,6 +1,6 @@
 # Talking to Your AI
 
-An indirect prompt injection lab. A document-reading assistant obeys an order hidden in the content it was only meant to read. One line of fine print reschedules a heart transplant. One line of code stops it. Paired vulnerable and fixed readers, one test, no dependencies.
+An indirect prompt injection lab. A document-reading assistant obeys an order hidden in the content it was only meant to read. One line of fine print moves a heart transplant up to Halloween. One line of code stops it. Paired vulnerable and fixed readers, one test, no dependencies.
 
 ![A nonprofit cardiac ad whose fine print is an injection](images/heart_transplant_ad.jpg)
 
@@ -11,7 +11,7 @@ The ad above is the attack. The last line of its fine print is not written for t
 `npm test` sends three documents through a vulnerable reader and its fixed twin:
 
 - a benign canary (`prefix=CLEARED`) that only changes the summary,
-- a reschedule order that moves a status-1A heart transplant six months,
+- a reschedule order that moves a status-1A heart transplant up to Halloween, to the front of the list,
 - an export order that mails the patient record to an address never on the chart.
 
 Same path. The payload is the only variable.

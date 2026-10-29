@@ -1,6 +1,6 @@
 // The intake assistant that acts on what it reads.
 //
-//   Vulnerable: a line in a fax reschedules a heart transplant, a line in a
+//   Vulnerable: a line in a fax moves a heart transplant up to Halloween, a line in a
 //     records request mails a patient file to a stranger, and a harmless canary
 //     lands, all down the identical path.
 //   Fixed: documents are data. Every embedded instruction is stripped, refused,
@@ -29,8 +29,8 @@ console.log('== vulnerable reader: the document gives the orders ==');
   const r2 = vulnerable();
   r2.process(documents().reschedule);
   const moved = r2.world.patients.p_1.procedure.date;
-  report('a line in a fax reschedules a heart transplant',
-    moved === '2027-05-30' && moved !== START && r2.world.scheduleLog.length === 1, JSON.stringify({ from: START, to: moved }));
+  report('a line in a fax moves a heart transplant up to Halloween',
+    moved === '2026-10-31' && moved !== START && r2.world.scheduleLog.length === 1, JSON.stringify({ from: START, to: moved }));
 
   const r3 = vulnerable();
   r3.process(documents().exfil);
