@@ -1,34 +1,24 @@
-# This Post Is Talking to Your AI
+# Talking to Your AI
 
-A line in a fax rescheduled a heart transplant. Nobody signed it. Nobody read it.
-The bureau's intake assistant read it, and that was enough.
+An indirect prompt injection lab. A document-reading assistant obeys an order hidden in the content it was only meant to read. One line of fine print reschedules a heart transplant. One line of code stops it. Paired vulnerable and fixed readers, one test, no dependencies.
 
-A medical records bureau runs an assistant that reads inbound documents and acts
-on them: referral letters, prior-authorization faxes, records requests. It
-summarizes, routes, reschedules, and exports. It treats every word it ingests as
-something to do. That is the bug.
+![A nonprofit cardiac ad whose fine print is an injection](images/heart_transplant_ad.jpg)
 
-## The mechanism
+The ad above is the attack. The last line of its fine print is not written for the patient, it is written for the software that reads the page. A medical records bureau runs an intake assistant that reads inbound documents, referral letters, prior-auth faxes, records requests, and acts on them: it summarizes, routes, reschedules procedures, exports records. It cannot tell a document it was asked to read from an order buried inside one. That is the whole bug (OWASP LLM01, indirect prompt injection).
 
-An instruction buried in a document is obeyed exactly like an order from a
-clinician, because the assistant never separates the document it reads from the
-command it follows (OWASP LLM01, indirect prompt injection). The lab runs the same
-path three ways:
+## What it runs
 
-- a **benign canary** (`prefix=CLEARED`) that only changes the summary, and
-- a **reschedule order** that moves a status-1A heart transplant six months, and
-- an **export order** that mails the patient record to an address never on the chart.
+`npm test` sends three documents through a vulnerable reader and its fixed twin:
 
-Same path. The payload is the only variable. The reschedule is in here because it
-is the one you do not forget.
+- a benign canary (`prefix=CLEARED`) that only changes the summary,
+- a reschedule order that moves a status-1A heart transplant six months,
+- an export order that mails the patient record to an address never on the chart.
 
-## The fix
+Same path. The payload is the only variable.
 
-The fixed reader treats every document as data and nothing as instruction. It
-summarizes and routes the content, strips any embedded directive, refuses to act
-on it, and logs the attempt. The transplant keeps its date, the record stays in
-the building, and an ordinary referral still routes. Read on one channel, act on
-another, and when a document tries to issue an order, send it to a human.
+![The code that obeys the directive, and the line that fixes it](images/injection_code.jpg)
+
+The vulnerable reader folds the document into what it acts on, so the directive runs. The fixed reader treats every document as data: it summarizes and routes the content, strips any embedded directive, refuses to act on it, and logs the attempt. The transplant keeps its date, the record stays in the building, and an ordinary referral still routes.
 
 ## Run
 
@@ -36,19 +26,16 @@ another, and when a document tries to issue an order, send it to a human.
 npm test
 ```
 
-Node 18 or newer, no dependencies. The run shows the vulnerable reader rescheduling
-the transplant and exporting the record off documents alone, then the fixed reader
-refusing and quarantining both while still handling a genuine referral.
+Node 18 or newer, no dependencies. Six checks: the vulnerable reader reschedules the transplant and exfiltrates the record off documents alone; the fixed reader refuses and quarantines both and still handles a genuine referral.
 
-## In the series
+## The fix, in one line
 
-Part of a bench on LLM-pipeline security, alongside
-[cross_agent_contamination](https://github.com/ghostintheprompt/cross_agent_contamination)
-and [malicious_blackout](https://github.com/ghostintheprompt/malicious_blackout).
-Same root defect: content is not a command, and capability is not permission.
+Content is data. It is never a command, no matter how it is phrased or whose letterhead it wears. Read on one channel, act on another, and when a document tries to issue an order, log it and hand it to a human.
 
-## Named for the record
+## Writeup and series
 
-Indirect prompt injection, OWASP LLM01. The cure is channel separation and treating
-retrieved or third-party content as data, never instruction. In a medical bureau the
-stakes also carry HIPAA and patient-safety names.
+Full writeup: https://ghostintheprompt.com/articles/talking-to-your-ai
+
+Siblings on the same bench: [malicious_blackout](https://github.com/ghostintheprompt/malicious_blackout) (orchestrator privilege inheritance) and [cross_agent_contamination](https://github.com/ghostintheprompt/cross_agent_contamination) (the injection spreading across agents through a shared store). Same root defect: content is not a command, and capability is not permission.
+
+All data is synthetic. Patient p_1 has no name; the program, contact, and record are fabricated for the demonstration.
