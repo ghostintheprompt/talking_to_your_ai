@@ -1,12 +1,13 @@
-// "This Post Is Talking to Your AI" — the lab behind the post.
+// The intake assistant that acts on what it reads.
 //
-//   Vulnerable reader: obeys an instruction buried in the content it summarizes.
-//     A benign canary ("prefix=TEAPOT") lands, and the identical path runs a
-//     data-exfiltration order. Same mechanism, the payload is the only variable.
-//   Fixed reader: treats ingested content as data, summarizes it, refuses and
-//     logs any embedded instruction, and still summarizes ordinary content right.
+//   Vulnerable: a line in a fax reschedules a heart transplant, a line in a
+//     records request mails a patient file to a stranger, and a harmless canary
+//     lands, all down the identical path.
+//   Fixed: documents are data. Every embedded instruction is stripped, refused,
+//     and logged. The transplant date holds, the record stays, ordinary referrals
+//     still route.
 
-const { documents } = require('./shared');
+const { documents, freshWorld } = require('./shared');
 const { createReader: vulnerable } = require('./vulnerable/reader');
 const { createReader: fixed } = require('./fixed/reader');
 
@@ -16,38 +17,44 @@ function report(name, ok, detail) {
   else { failed++; console.log(`  FAIL  ${name} — ${detail}`); }
 }
 
-console.log('== vulnerable reader: the content gives the orders ==');
+const START = freshWorld().patients.p_1.procedure.date; // 2026-11-12
+
+console.log('== vulnerable reader: the document gives the orders ==');
 {
   const r = vulnerable();
-  const out = r.summarize(documents().canary);
-  report('benign canary lands: the summary obeys an instruction from the post',
-    out.summary.startsWith('TEAPOT') && out.actions.includes('prefix'), JSON.stringify(out));
+  const out = r.process(documents().canary);
+  report('benign canary lands: the summary obeys the document',
+    out.summary.startsWith('CLEARED') && out.actions.includes('prefix'), JSON.stringify(out));
 
   const r2 = vulnerable();
-  const out2 = r2.summarize(documents().harmful);
-  report('same path, worse payload: an embedded order exfiltrates a secret',
-    out2.actions.includes('exportSecret') && r2.world.exfil.length === 1
-      && r2.world.exfil[0].secret === 'tok_live_9931_protected', JSON.stringify({ out2, exfil: r2.world.exfil }));
+  r2.process(documents().reschedule);
+  const moved = r2.world.patients.p_1.procedure.date;
+  report('a line in a fax reschedules a heart transplant',
+    moved === '2027-05-30' && moved !== START && r2.world.scheduleLog.length === 1, JSON.stringify({ from: START, to: moved }));
+
+  const r3 = vulnerable();
+  r3.process(documents().exfil);
+  report('a line in a records request mails a patient file to a stranger',
+    r3.world.exfil.length === 1 && r3.world.exfil[0].dest === 'drop@attacker.example', JSON.stringify(r3.world.exfil));
 }
 
-console.log('== fixed reader: content is data, not commands ==');
+console.log('== fixed reader: documents are data, not orders ==');
 {
   const r = fixed();
-  const out = r.summarize(documents().canary);
-  report('the canary is refused: summary carries no injected prefix',
-    !out.summary.startsWith('TEAPOT') && out.actions.length === 0, JSON.stringify(out));
-  report('the attempt is logged, not obeyed',
-    r.world.quarantine.length === 1 && r.world.quarantine[0].directive.kind === 'prefix', JSON.stringify(r.world.quarantine));
+  r.process(documents().reschedule);
+  report('the transplant keeps its date, the reschedule is quarantined',
+    r.world.patients.p_1.procedure.date === START && r.world.scheduleLog.length === 0 && r.world.quarantine.length === 1,
+    JSON.stringify({ date: r.world.patients.p_1.procedure.date, quarantine: r.world.quarantine }));
 
   const r2 = fixed();
-  r2.summarize(documents().harmful);
-  report('the exfiltration order does nothing and is quarantined',
-    r2.world.exfil.length === 0 && r2.world.quarantine.length === 1, JSON.stringify({ exfil: r2.world.exfil, quarantine: r2.world.quarantine }));
+  r2.process(documents().exfil);
+  report('the record stays in the building, the order is quarantined',
+    r2.world.exfil.length === 0 && r2.world.quarantine.length === 1, JSON.stringify(r2.world.quarantine));
 
   const r3 = fixed();
-  const legit = r3.summarize(documents().legit);
-  report('functionality: ordinary content is still summarized correctly',
-    legit.summary.includes('session management') && r3.world.quarantine.length === 0, JSON.stringify(legit));
+  const legit = r3.process(documents().legit);
+  report('functionality: an ordinary referral is still summarized and routed',
+    legit.summary.includes('worsening dyspnea') && r3.world.quarantine.length === 0, JSON.stringify(legit));
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

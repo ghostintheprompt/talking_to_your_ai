@@ -1,26 +1,26 @@
-// FIXED: the reader treats everything it ingests as data. It summarizes the
-// content and never executes an instruction found inside it, no matter how the
-// text is phrased. An embedded directive is stripped, refused, and logged. The
-// summary of genuine content is unchanged, so the reader still does its job.
+// FIXED: the intake assistant treats every document as data. It summarizes and
+// routes the content and never executes an instruction found inside it, however
+// the text is phrased. An embedded directive is stripped, refused, and logged.
+// The transplant keeps its date, the record stays in the building, and an ordinary
+// referral is still summarized, so the bureau still runs.
 
 const { freshWorld, parseDirective, stripDirective } = require('../shared');
 
 function createReader() {
   const world = freshWorld();
 
-  function summarize(doc) {
+  function process(doc) {
     const d = parseDirective(doc.text);
     if (d) {
       world.quarantine.push({
         source: doc.source, directive: d,
-        reason: 'instruction found in the data channel; summarized, never executed',
+        reason: 'instruction found in a document; summarized, never executed',
       });
     }
-    // content is summarized as data; any directive it carried has no authority
     return { summary: stripDirective(doc.text), actions: [] };
   }
 
-  return { world, summarize };
+  return { world, process };
 }
 
 module.exports = { createReader };
